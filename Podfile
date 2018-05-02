@@ -1,10 +1,10 @@
 use_frameworks!
 
 target 'OAuthSwiftTests' do
-    platform :osx, '10.10'
+    platform :osx, '10.11'
 
-    # TODO use Swifter main repository when pushed to cocoapod and use good enum syntax
-    pod 'Swifter'# , git: 'https://github.com/oauthswift/swifter.git', branch: 'stable'
-    pod 'Erik'
+    pod 'Swifter', :git => 'https://github.com/httpswift/swifter.git'
+    pod 'Erik', :git => 'https://github.com/phimage/Erik.git'
+    pod 'Kanna', :git => 'https://github.com/tid-kijyun/Kanna.git'
 
 end

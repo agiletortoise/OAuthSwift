@@ -190,7 +190,11 @@ open class OAuth2Swift: OAuthSwift {
     }
 
     fileprivate func requestOAuthAccessToken(withParameters parameters: OAuthSwift.Parameters, headers: OAuthSwift.Headers? = nil, success: @escaping TokenSuccessHandler, failure: FailureHandler?) -> OAuthSwiftRequestHandle? {
-        let successHandler: OAuthSwiftHTTPRequest.SuccessHandler = { [unowned self] response in
+        let successHandler: OAuthSwiftHTTPRequest.SuccessHandler = { [weak self] response in
+            guard let this = self else {
+                OAuthSwift.retainError(failure)
+                return
+            }
             let responseJSON: Any? = try? response.jsonObject(options: .mutableContainers)
 
             let responseParameters: OAuthSwift.Parameters
@@ -208,17 +212,17 @@ open class OAuth2Swift: OAuthSwift {
             }
 
             if let refreshToken = responseParameters["refresh_token"] as? String {
-                self.client.credential.oauthRefreshToken = refreshToken.safeStringByRemovingPercentEncoding
+                this.client.credential.oauthRefreshToken = refreshToken.safeStringByRemovingPercentEncoding
             }
 
             if let expiresIn = responseParameters["expires_in"] as? String, let offset = Double(expiresIn) {
-                self.client.credential.oauthTokenExpiresAt = Date(timeInterval: offset, since: Date())
+                this.client.credential.oauthTokenExpiresAt = Date(timeInterval: offset, since: Date())
             } else if let expiresIn = responseParameters["expires_in"] as? Double {
-                self.client.credential.oauthTokenExpiresAt = Date(timeInterval: expiresIn, since: Date())
+                this.client.credential.oauthTokenExpiresAt = Date(timeInterval: expiresIn, since: Date())
             }
 
-            self.client.credential.oauthToken = accessToken.safeStringByRemovingPercentEncoding
-            success(self.client.credential, response, responseParameters)
+            this.client.credential.oauthToken = accessToken.safeStringByRemovingPercentEncoding
+            success(this.client.credential, response, responseParameters)
         }
 
         guard let accessTokenUrl = accessTokenUrl else {
@@ -284,8 +288,31 @@ open class OAuth2Swift: OAuthSwift {
         }
     }
 
+	// OAuth 2.0 Specification: https://tools.ietf.org/html/draft-ietf-oauth-v2-13#section-4.3
     @discardableResult
-    open func authorize(deviceToken deviceCode: String, grantType: String = "http://oauth.net/grant_type/device/1.0", success: @escaping TokenRenewedHandler, failure: @escaping OAuthSwiftHTTPRequest.FailureHandler) -> OAuthSwiftRequestHandle? {
+    open func authorize(username: String, password: String, scope: String?, headers: OAuthSwift.Headers? = nil, success: @escaping TokenSuccessHandler, failure: @escaping OAuthSwiftHTTPRequest.FailureHandler) -> OAuthSwiftRequestHandle? {
+
+        var parameters = OAuthSwift.Parameters()
+        parameters["client_id"] = self.consumerKey
+        parameters["client_secret"] = self.consumerSecret
+        parameters["username"] = username
+        parameters["password"] = password
+        parameters["grant_type"] = "password"
+
+        if let scope = scope {
+            parameters["scope"] = scope
+        }
+
+        return requestOAuthAccessToken(
+            withParameters: parameters,
+            headers: headers,
+            success: success,
+            failure: failure
+        )
+    }
+
+    @discardableResult
+    open func authorize(deviceToken deviceCode: String, grantType: String = "http://oauth.net/grant_type/device/1.0", success: @escaping TokenSuccessHandler, failure: @escaping OAuthSwiftHTTPRequest.FailureHandler) -> OAuthSwiftRequestHandle? {
         var parameters = OAuthSwift.Parameters()
         parameters["client_id"] = self.consumerKey
         parameters["client_secret"] = self.consumerSecret
@@ -294,9 +321,8 @@ open class OAuth2Swift: OAuthSwift {
 
         return requestOAuthAccessToken(
             withParameters: parameters,
-            success: { (credential, _, _) in
-                success(credential)
-            }, failure: failure
+            success: success,
+            failure: failure
         )
     }
 
