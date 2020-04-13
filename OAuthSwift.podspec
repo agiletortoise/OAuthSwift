@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'OAuthSwift'
-  s.version = '2.0.0'
+  s.version = '2.1.0'
   s.license = 'MIT'
   s.summary = 'Swift based OAuth library for iOS and macOS.'
   s.homepage = 'https://github.com/OAuthSwift/OAuthSwift'
@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
     'Eric Marchand' => 'eric.marchand.n7@gmail.com'
   }
   s.source = { git: 'https://github.com/OAuthSwift/OAuthSwift.git', tag: s.version }
-  s.source_files = 'Sources/*.swift'
+  s.source_files = 'Sources/**/*.swift'
   s.swift_versions = ['5.0', '5.1']
   s.ios.deployment_target = '9.0'
   s.osx.deployment_target = '10.10'
