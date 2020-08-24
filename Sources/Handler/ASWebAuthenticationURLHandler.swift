@@ -13,7 +13,7 @@ import SafariServices
 import AuthenticationServices
 #endif
 
-@available(iOS 13.0, macCatalyst 13.0, *)
+@available(iOS 13.0, tvOS 13.0, macCatalyst 13.0, *)
 open class ASWebAuthenticationURLHandler: OAuthSwiftURLHandlerType {
     var webAuthSession: ASWebAuthenticationSession!
     let prefersEphemeralWebBrowserSession: Bool
@@ -28,28 +28,39 @@ open class ASWebAuthenticationURLHandler: OAuthSwiftURLHandlerType {
     }
 
     public func handle(_ url: URL) {
-        webAuthSession = ASWebAuthenticationSession(url: url,
-                                                    callbackURLScheme: callbackUrlScheme,
-                                                    completionHandler: { callback, error in
-                                                        guard error == nil, let successURL = callback else {
-                                                            let msg = error?.localizedDescription.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)
-                                                            let urlString = "\(self.callbackUrlScheme)?error=\(msg ?? "UNKNOWN")"
-                                                            guard let url = URL(string: urlString) else {
-                                                                return
-                                                            }
-                                                            #if !OAUTH_APP_EXTENSIONS
-                                                            UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                                                            #endif
-                                                            return
-                                                        }
-                                                        #if !OAUTH_APP_EXTENSIONS
-                                                        UIApplication.shared.open(successURL, options: [:], completionHandler: nil)
-                                                        #endif
+        webAuthSession = ASWebAuthenticationSession(
+            url: url,
+            callbackURLScheme: callbackUrlScheme,
+            completionHandler: { callback, error in
+                if let error = error {
+                    let msg = error.localizedDescription.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)
+                    let errorDomain = (error as NSError).domain
+                    let errorCode = (error as NSError).code
+                    let urlString = "\(self.callbackUrlScheme)?error=\(msg ?? "UNKNOWN")&error_domain=\(errorDomain)&error_code=\(errorCode)"
+                    let url = URL(string: urlString)!
+                    #if !OAUTH_APP_EXTENSIONS
+                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                    #endif
+                } else if let successURL = callback {
+                    #if !OAUTH_APP_EXTENSIONS
+                    UIApplication.shared.open(successURL, options: [:], completionHandler: nil)
+                    #endif
+                }
         })
         webAuthSession.presentationContextProvider = presentationContextProvider
         webAuthSession.prefersEphemeralWebBrowserSession = prefersEphemeralWebBrowserSession
-        
+
         _ = webAuthSession.start()
+        OAuthSwift.log?.trace("ASWebAuthenticationSession is started")
+
+    }
+}
+
+@available(iOS 13.0, tvOS 13.0, macCatalyst 13.0, *)
+extension ASWebAuthenticationURLHandler {
+    static func isCancelledError(domain: String, code: Int) -> Bool {
+        return domain == ASWebAuthenticationSessionErrorDomain &&
+            code == ASWebAuthenticationSessionError.canceledLogin.rawValue
     }
 }
 
