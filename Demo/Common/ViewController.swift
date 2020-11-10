@@ -1447,6 +1447,9 @@ extension ViewController {
             }
         }
         services.loadFromFile(confPath)
+      
+        // Configure log level, if desired
+        OAuthSwift.setLogLevel(.trace)
     }
     
     func initConfOld() { // TODO Must be removed later
@@ -1554,7 +1557,7 @@ extension ViewController {
             return OAuthSwiftOpenURLExternally.sharedInstance
         case .asWeb:
             #if os(iOS)
-            if #available(iOS 13.0, *) {
+            if #available(iOS 13.0, tvOS 13.0, *) {
                 return ASWebAuthenticationURLHandler(callbackUrlScheme: "oauth-swift://oauth-callback/", presentationContextProvider: self)
             }
             #endif
@@ -1678,7 +1681,7 @@ import SafariServices
 #if canImport(AuthenticationServices)
 import AuthenticationServices
 #endif
-@available(iOS 13.0, macCatalyst 13.0, *)
+@available(iOS 13.0, tvOS 13.0, macCatalyst 13.0, *)
 extension ViewController: ASWebAuthenticationPresentationContextProviding {
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         return UIApplication.shared.topWindow ?? ASPresentationAnchor()

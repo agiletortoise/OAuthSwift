@@ -39,18 +39,30 @@ use_frameworks!
 
 pod 'OAuthSwift', '~> 2.0.0'
 ```
+### Swift Package Manager Support
+
+```swift
+import PackageDescription
+
+let package = Package(
+    name: "MyApp",
+    dependencies: [
+        .package(name: "OAuthSwift", url: "https://github.com/OAuthSwift/OAuthSwift.git", .upToNextMajor(from: "2.1.0"))
+    ]
+)
+```
 
 ### Old versions
 
-#### swift 3
+#### Swift 3
 
 Use the `swift3` branch, or the tag `1.1.2` on main branch
 
-#### swift 4
+#### Swift 4
 
 Use the tag `1.2.0` on main branch
 
-#### objective c
+#### Objective-C
 
 Use the tag `1.4.1` on main branch
 
@@ -64,7 +76,7 @@ Replace oauth-swift by your application name
 - On iOS implement `UIApplicationDelegate` method
 ```swift
 func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey  : Any] = [:]) -> Bool {
-  if (url.host == "oauth-callback") {
+  if url.host == "oauth-callback" {
     OAuthSwift.handle(url: url)
   }
   return true
@@ -77,7 +89,7 @@ func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>)
         guard let url = URLContexts.first?.url else {
             return
         }
-        if (url.host == "oauth-callback") {
+        if url.host == "oauth-callback" {
             OAuthSwift.handle(url: url)
         }
 }
@@ -85,7 +97,7 @@ func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>)
 
 :warning: Any other application may try to open a URL with your url scheme. So you can check the source application, for instance for safari controller :
 ```
-if (options[.sourceApplication] as? String == "com.apple.SafariViewService") {
+if options[.sourceApplication] as? String == "com.apple.SafariViewService" {
 ```
 
 - On macOS you must register a handler on `NSAppleEventManager` for event type `kAEGetURL` (see demo code)
@@ -112,7 +124,7 @@ oauthswift = OAuth1Swift(
 )
 // authorize
 let handle = oauthswift.authorize(
-    withCallbackURL: URL(string: "oauth-swift://oauth-callback/twitter")!) { result in
+    withCallbackURL: "oauth-swift://oauth-callback/twitter") { result in
     switch result {
     case .success(let (credential, response, parameters)):
       print(credential.oauthToken)
@@ -153,7 +165,7 @@ oauthswift = OAuth2Swift(
     responseType:   "token"
 )
 let handle = oauthswift.authorize(
-    withCallbackURL: URL(string: "oauth-swift://oauth-callback/instagram")!,
+    withCallbackURL: "oauth-swift://oauth-callback/instagram",
     scope: "likes+comments", state:"INSTAGRAM") { result in
     switch result {
     case .success(let (credential, response, parameters)):
@@ -181,7 +193,7 @@ let codeVerifier = base64url("abcd...")
 let codeChallenge = codeChallenge(for: codeVerifier)
 
 let handle = oauthswift.authorize(
-    withCallbackURL: URL(string: "myApp://callback/")!,
+    withCallbackURL: "myApp://callback/",
     scope: "requestedScope", 
     state:"State01",
     codeChallenge: codeChallenge,
